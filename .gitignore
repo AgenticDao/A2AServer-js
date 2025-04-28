@@ -1,0 +1,69 @@
+# Dependencies
+node_modules
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp
+.pnp.js
+
+# Server data
+.a2a-tasks
+
+# Build outputs
+dist
+build
+out
+*.tsbuildinfo
+
+# Environment and config files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env*.local
+config.local.js
+
+# IDE and editors
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+coverage
+.nyc_output
+
+# Debug
+.debugger
+.chrome
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+.firebase
+tmp/
+temp/
+
+# Misc
+.vercel
+.netlify
+
