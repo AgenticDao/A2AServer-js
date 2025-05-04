@@ -6,25 +6,25 @@
  */
 
 // Export the main server class and its options
-export { A2AServer } from "./server.js";
-export type { A2AServerOptions } from "./server.js";
+export { A2AServer } from "./server";
+export type { A2AServerOptions } from "./server";
 
 // Export handler-related types
-export type { TaskHandler, TaskContext, TaskYieldUpdate } from "./handler.js";
+export type { TaskHandler, TaskContext, TaskYieldUpdate } from "./handler";
 
 // Export store-related types and implementations
-export type { TaskStore } from "./store.js";
-export { InMemoryTaskStore, FileStore } from "./store.js";
+export type { TaskStore } from "./store";
+export { InMemoryTaskStore, FileStore } from "./store";
 
 // Export the custom error class
-export { A2AError } from "./error.js";
+export { A2AError } from "./error";
 
 // Re-export all schema types for convenience
-export * as schema from "./schema.js";
+export * as schema from "./schema";
 
 // Example basic usage (for documentation or testing)
 /*
-import { A2AServer, TaskContext, TaskYieldUpdate, schema } from './index.js';
+import { A2AServer, TaskContext, TaskYieldUpdate, schema } from './index';
 import { v4 as uuidv4 } from 'uuid'; // Assuming uuid is installed
 
 async function* mySimpleHandler(context: TaskContext): AsyncGenerator<TaskYieldUpdate, schema.Task | void, unknown> {

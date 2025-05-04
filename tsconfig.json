@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "NodeNext",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "skipLibCheck": true,
     "outDir": "dist",
-    "esModuleInterop": true, // Often helpful with NodeNext
-    "resolveJsonModule": true // Good practice for importing JSON if needed
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src/**/*.ts", "src/schema.ts"]
 }

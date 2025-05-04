@@ -5,17 +5,20 @@ import express, {
   RequestHandler,
 } from "express";
 import cors, { CorsOptions } from "cors";
-import * as schema from "./schema.js";
+import * as schema from "./schema";
 // Import TaskAndHistory along with TaskStore implementations
-import { TaskStore, InMemoryTaskStore, TaskAndHistory } from "./store.js";
+import { TaskStore, InMemoryTaskStore, TaskAndHistory } from "./store";
 // Import TaskHandler and the original TaskContext to derive the new one
-import { TaskHandler, TaskContext as OldTaskContext } from "./handler.js";
-import { A2AError } from "./error.js";
+import { TaskHandler, TaskContext as OldTaskContext } from "./handler";
+import { A2AError } from "./error";
 import {
   getCurrentTimestamp,
   isTaskStatusUpdate,
   isArtifactUpdate,
-} from "./utils.js";
+} from "./utils";
+// Import Solana libraries for signature verification
+import { PublicKey } from "@solana/web3.js";
+import nacl from "tweetnacl";
 
 /**
  * Options for configuring the A2AServer.
@@ -29,10 +32,91 @@ export interface A2AServerOptions {
   basePath?: string;
   /** Agent Card for the agent being served. */
   card?: schema.AgentCard;
+  /** Whether to enable Solana signature verification. Defaults to false. */
+  enableSignatureVerification?: boolean;
 }
 
 // Define new TaskContext without the store, based on the original from handler.ts
 export interface TaskContext extends Omit<OldTaskContext, "taskStore"> {}
+
+/**
+ * Middleware for verifying Solana wallet signatures.
+ * Checks three headers for signature verification data and validates the signature.
+ * 
+ * @param req Express request object
+ * @param res Express response object
+ * @param next Express next function
+ */
+function verifySolanaSignature(req: Request, res: Response, next: NextFunction) {
+  // Extract verification headers
+  const signature = req.header("X-A2A-Verify-Signature");
+  const message = req.header("X-A2A-Verify-Message");
+  const publicKeyStr = req.header("X-A2A-Verify-PublicKey");
+
+  // Check if all required headers are present
+  if (!signature || !message || !publicKeyStr) {
+    res.status(403).json({
+      jsonrpc: "2.0",
+      id: null,
+      error: {
+        code: -32099,
+        message: "Missing signature verification headers",
+        data: {
+          details: "All X-A2A-Verify-* headers are required for authentication"
+        }
+      }
+    });
+    return;
+  }
+
+  try {
+    // Convert the public key string to a Solana PublicKey object
+    const publicKey = new PublicKey(publicKeyStr);
+
+    // Convert signature and message to Uint8Array for verification
+    const signatureBytes = Buffer.from(signature, 'base64');
+    const messageBytes = Buffer.from(message);
+
+    // Verify the signature using TweetNaCl
+    const isValid = nacl.sign.detached.verify(
+      messageBytes,
+      signatureBytes,
+      publicKey.toBytes()
+    );
+
+    if (!isValid) {
+      res.status(403).json({
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32099,
+          message: "Invalid signature",
+          data: {
+            details: "The provided signature could not be verified"
+          }
+        }
+      });
+      return;
+    }
+
+    // Signature is valid, proceed to next middleware
+    next();
+  } catch (error) {
+    console.error("Signature verification error:", error);
+    res.status(403).json({
+      jsonrpc: "2.0",
+      id: null,
+      error: {
+        code: -32099,
+        message: "Signature verification failed",
+        data: {
+          details: error instanceof Error ? error.message : String(error)
+        }
+      }
+    });
+    return;
+  }
+}
 
 /**
  * Implements an A2A specification compliant server using Express.
@@ -46,7 +130,8 @@ export class A2AServer {
   private basePath: string;
   // Track active cancellations
   private activeCancellations: Set<string> = new Set();
-  card: schema.AgentCard;
+  card?: schema.AgentCard;
+  private enableSignatureVerification: boolean;
 
   /**
    * Applies task updates (status or artifact) to the task and history objects.
@@ -142,6 +227,7 @@ export class A2AServer {
     this.taskStore = options.taskStore ?? new InMemoryTaskStore();
     this.corsOptions = options.cors ?? true; // Default to allow all
     this.basePath = options.basePath ?? "/";
+    this.enableSignatureVerification = options.enableSignatureVerification ?? false;
     if (options.card) this.card = options.card;
     // Ensure base path starts and ends with a slash if it's not just "/"
     if (this.basePath !== "/") {
@@ -177,8 +263,12 @@ export class A2AServer {
       res.json(this.card);
     });
 
-    // Mount the endpoint handler
-    app.post(this.basePath, this.endpoint());
+    // Mount the endpoint handler with signature verification if enabled
+    if (this.enableSignatureVerification) {
+      app.post(this.basePath, verifySolanaSignature, this.endpoint());
+    } else {
+      app.post(this.basePath, this.endpoint());
+    }
 
     // Basic error handler
     app.use(this.errorHandler);
@@ -188,6 +278,9 @@ export class A2AServer {
       console.log(
         `A2A Server listening on port ${port} at path ${this.basePath}`
       );
+      if (this.enableSignatureVerification) {
+        console.log("Solana signature verification is ENABLED");
+      }
     });
 
     return app;
@@ -762,6 +855,14 @@ export class A2AServer {
   // --- Response Formatting ---
 
   /**
+   * Safely gets the request ID, ensuring it's not undefined.
+   * Returns null if the ID is undefined.
+   */
+  private safeReqId(id: string | number | null | undefined): string | number | null {
+    return id ?? null;
+  }
+
+  /**
    * Creates a JSON-RPC success response.
    * 
    * @param id The request ID to include in the response
@@ -769,18 +870,12 @@ export class A2AServer {
    * @returns A formatted JSON-RPC success response
    */
   private createSuccessResponse<T>(
-    id: number | string | null,
+    id: string | number | null | undefined,
     result: T
   ): schema.JSONRPCResponse<T> {
-    if (id === null) {
-      // This shouldn't happen for methods that expect a response, but safeguard
-      throw A2AError.internalError(
-        "Cannot create success response for null ID."
-      );
-    }
     return {
       jsonrpc: "2.0",
-      id: id,
+      id: this.safeReqId(id),
       result: result,
     };
   }
@@ -793,13 +888,13 @@ export class A2AServer {
    * @returns A formatted JSON-RPC error response
    */
   private createErrorResponse(
-    id: number | string | null,
+    id: string | number | null | undefined,
     error: schema.JSONRPCError<unknown>
   ): schema.JSONRPCResponse<null, unknown> {
     // For errors, ID should be the same as request ID, or null if that couldn't be determined
     return {
       jsonrpc: "2.0",
-      id: id, // Can be null if request ID was invalid/missing
+      id: this.safeReqId(id), // Can be null if request ID was invalid/missing
       error: error,
     };
   }
@@ -815,7 +910,7 @@ export class A2AServer {
    */
   private normalizeError(
     error: any,
-    reqId: number | string | null,
+    reqId: string | number | null | undefined,
     taskId?: string
   ): schema.JSONRPCResponse<null, unknown> {
     let a2aError: A2AError;
@@ -836,12 +931,12 @@ export class A2AServer {
 
     console.error(
       `Error processing request (Task: ${a2aError.taskId ?? "N/A"}, ReqID: ${
-        reqId ?? "N/A"
+        this.safeReqId(reqId) ?? "N/A"
       }):`,
       a2aError
     );
 
-    return this.createErrorResponse(reqId, a2aError.toJSONRPCError());
+    return this.createErrorResponse(this.safeReqId(reqId), a2aError.toJSONRPCError());
   }
 
   /**
@@ -965,14 +1060,13 @@ export class A2AServer {
    */
   private sendJsonResponse<T>(
     res: Response,
-    reqId: number | string | null,
+    reqId: string | number | null | undefined,
     result: T
   ): void {
-    if (reqId === null) {
+    if (reqId === undefined || reqId === null) {
       console.warn(
-        "Attempted to send JSON response for a request with null ID."
+        "Attempted to send JSON response for a request with null or undefined ID."
       );
-      // Should this be an error? Or just log and ignore?
       // For 'tasks/send' etc., ID should always be present.
       return;
     }

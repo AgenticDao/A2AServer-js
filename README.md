@@ -15,6 +15,8 @@ This directory contains a TypeScript server implementation for the Agent-to-Agen
     - [FileStore](#filestore)
   - [TaskHandler](#taskhandler)
 - [JSON-RPC Endpoints](#json-rpc-endpoints)
+- [Security](#security)
+  - [Solana Signature Verification](#solana-signature-verification)
 - [Testing with cURL](#testing-with-curl)
   - [Method 1: Using Fixed Task IDs](#method-1-using-fixed-task-ids)
   - [Method 2: Using Generated UUIDs](#method-2-using-generated-uuids)
@@ -165,6 +167,7 @@ const server = new A2AServer(taskHandler, options);
 - `cors`: CORS configuration (defaults to allowing all origins)
 - `basePath`: Base path for the API endpoint (defaults to '/')
 - `card`: Agent card metadata
+- `enableSignatureVerification`: Enable Solana wallet signature verification (defaults to false)
 
 ### Storage Options
 
@@ -208,6 +211,61 @@ The server implements these A2A protocol endpoints:
 - `tasks/sendSubscribe`: Submit a task and receive streaming updates
 - `tasks/get`: Get the current state of a task
 - `tasks/cancel`: Cancel a running task
+
+## Security
+
+### Solana Signature Verification
+
+The server can be configured to require Solana wallet signature verification for all requests. When enabled, clients must include three headers with each request:
+
+- `X-A2A-Verify-Signature`: The signature in base64 format
+- `X-A2A-Verify-Message`: The original message that was signed
+- `X-A2A-Verify-PublicKey`: The Solana public key that signed the message
+
+To enable signature verification:
+
+```typescript
+const server = new A2AServer(myHandler, {
+  enableSignatureVerification: true
+});
+```
+
+Example client-side signing code (using @solana/web3.js and a browser wallet):
+
+```typescript
+import { Connection, PublicKey } from '@solana/web3.js';
+
+async function signAndSendRequest(endpoint, jsonRpcPayload) {
+  // Get the wallet adapter from your app (this depends on your wallet integration)
+  const wallet = getWallet();
+  
+  // Create a message to sign (e.g., combination of timestamp and request data)
+  const message = `${Date.now()}-${JSON.stringify(jsonRpcPayload)}`;
+  
+  // Sign the message with wallet
+  const encodedMessage = new TextEncoder().encode(message);
+  const signature = await wallet.signMessage(encodedMessage);
+  
+  // Convert signature to base64
+  const signatureBase64 = Buffer.from(signature).toString('base64');
+  
+  // Send the request with verification headers
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-A2A-Verify-Signature': signatureBase64,
+      'X-A2A-Verify-Message': message,
+      'X-A2A-Verify-PublicKey': wallet.publicKey.toString()
+    },
+    body: JSON.stringify(jsonRpcPayload)
+  });
+  
+  return await response.json();
+}
+```
+
+If any of the verification headers are missing or the signature is invalid, the server will respond with a 403 Forbidden error.
 
 ## Testing with cURL
 
