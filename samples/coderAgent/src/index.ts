@@ -1,66 +1,80 @@
-import { A2AServer, TaskContext, TaskYieldUpdate } from "../../../src/index";
-import { createCoderAgent, processAgentAction } from "./coderAgent";
-import { CONFIG } from "./config";
-import { HumanMessage } from "@langchain/core/messages";
+/**
+ * Coder Agent implemented with LangChain and OpenAI
+ */
+import {
+  TaskContext,
+  A2AServer,
+  TaskYieldUpdate,
+} from "../../../src/index";
+import * as schema from "../../../src/schema";
+import { generateCode } from "./generator";
+import { CodeMessageData } from "./code-format";
+import config from "./config";
 
 /**
- * Main function to start the A2A server with LangGraph coder agent
+ * Coder Agent implementation using LangChain and OpenAI
  */
-async function startServer() {
-  console.log("Initializing coder agent with LangChain and LangGraph...");
-  
-  // Create the LangGraph agent
-  const coderAgent = createCoderAgent();
-  
-  /**
-   * A2A Task Handler that uses the LangGraph coder agent
-   */
-  async function* langGraphCoderHandler(
-    context: TaskContext
-  ): AsyncGenerator<TaskYieldUpdate, void, unknown> {
-    const taskId = context.task.id;
-    const userMessage = context.userMessage;
-    
-    console.log(`[${taskId}] Processing new coding task...`);
-    
-    // Yield "working" status
+async function* coderAgent({
+  task,
+  history,
+}: TaskContext): AsyncGenerator<TaskYieldUpdate, schema.Task | void, unknown> {
+  // Make sure we have history
+  if (!history || history.length === 0) {
+    console.warn(`[CoderAgent] No history/messages found for task ${task.id}`);
     yield {
-      state: "working",
+      state: "failed",
       message: {
         role: "agent",
-        parts: [{ type: "text", text: "I'm working on your coding task..." }],
+        parts: [{ type: "text", text: "No input message found." }],
       },
     };
+    return;
+  }
+
+  // Inform the user that we're working
+  yield {
+    state: "working",
+    message: {
+      role: "agent",
+      parts: [{ type: "text", text: "Generating code..." }],
+    },
+  };
+
+  try {
+    // Generate code using our LangChain-based generator
+    const generatedCode: CodeMessageData = await generateCode(history);
     
-    try {
-      // Initialize agent state with user message
-      const initialState = {
-        messages: [new HumanMessage(userMessage.parts[0].text)],
-        steps: [],
-        code: "",
-        currentTask: userMessage.parts[0].text,
-        isComplete: false,
-      };
-      
-      // Execute the LangGraph agent
-      const agentExecutor = await coderAgent.invoke(initialState);
-      
-      // Check for cancellation after each step
-      if (context.isCancelled()) {
-        console.log(`[${taskId}] Task was cancelled.`);
-        return;
+    // Track which files we've emitted and their content
+    const fileContents = new Map<string, string>();
+    const fileOrder: string[] = [];
+    let emittedFileCount = 0;
+    
+    // Process generated files
+    if (generatedCode.files && generatedCode.files.length > 0) {
+      // First, collect all files
+      for (const file of generatedCode.files) {
+        if (file.filename && file.content) {
+          fileContents.set(file.filename, file.content);
+          fileOrder.push(file.filename);
+        }
       }
       
-      // Extract the final code from the agent's output
-      const finalCode = agentExecutor.code || "";
+      // Then emit each file as an artifact
+      for (let i = 0; i < fileOrder.length; i++) {
+        const filename = fileOrder[i];
+        const content = fileContents.get(filename) || "";
+        
+        console.log(`[CoderAgent] Emitting file (index ${i}): ${filename}`);
+        yield {
+          index: i,
+          name: filename,
+          parts: [{ type: "text", text: content }],
+          lastChunk: i === fileOrder.length - 1,
+        };
+        emittedFileCount++;
+      }
       
-      // Create an artifact with the generated code
-      yield {
-        name: "generated_code.txt",
-        parts: [{ type: "text", text: finalCode }],
-      };
-      
-      // Send final completion message
+      // Notify completion
       yield {
         state: "completed",
         message: {
@@ -68,40 +82,87 @@ async function startServer() {
           parts: [
             {
               type: "text",
-              text: "I've generated the code based on your requirements. Check the attached file for the implementation.",
+              text: `Generated files: ${fileOrder.join(", ")}`,
             },
           ],
         },
       };
-    } catch (error) {
-      console.error(`[${taskId}] Error in coder agent:`, error);
-      
-      // Return error as a failed state
+    } else {
+      // No files were generated
       yield {
-        state: "failed",
+        state: "completed",
         message: {
           role: "agent",
           parts: [
             {
               type: "text",
-              text: `Sorry, I encountered an error while processing your request: ${error.message || "Unknown error"}`,
+              text: "Completed, but no files were generated.",
             },
           ],
         },
       };
     }
+  } catch (error) {
+    // Handle errors
+    console.error("[CoderAgent] Error generating code:", error);
+    yield {
+      state: "failed",
+      message: {
+        role: "agent",
+        parts: [
+          {
+            type: "text", 
+            text: `Error generating code: ${error instanceof Error ? error.message : String(error)}`
+          }
+        ],
+      },
+    };
   }
-  
-  // Create and start the A2A server
-  const server = new A2AServer(langGraphCoderHandler);
-  server.start(CONFIG.port);
-  
-  console.log(`A2A Coder Agent server started on port ${CONFIG.port}`);
-  console.log("Send coding tasks to the server to generate code using LangGraph + OpenAI");
 }
 
-// Start the server
-startServer().catch((error) => {
-  console.error("Failed to start server:", error);
-  process.exit(1);
-}); 
+// Agent card definition
+const coderAgentCard: schema.AgentCard = {
+  name: "Coder Agent",
+  description:
+    "An agent that generates code based on natural language instructions and streams file outputs.",
+  url: `http://${config.server.host}:${config.server.port}`,
+  provider: {
+    organization: "A2A Samples",
+  },
+  version: "0.0.1",
+  capabilities: {
+    streaming: true,
+    pushNotifications: false,
+    stateTransitionHistory: true,
+  },
+  authentication: null,
+  defaultInputModes: ["text"],
+  defaultOutputModes: ["text", "file"],
+  skills: [
+    {
+      id: "code_generation",
+      name: "Code Generation",
+      description:
+        "Generates code snippets or complete files based on user requests, streaming the results.",
+      tags: ["code", "development", "programming"],
+      examples: [
+        "Write a Python function to calculate Fibonacci numbers.",
+        "Create an HTML file with a basic button that alerts 'Hello!' when clicked.",
+        "Generate a TypeScript class for a user profile with name and email properties.",
+        "Write a React component for a todo list.",
+        "Create a simple Express.js server with a GET endpoint.",
+      ],
+    },
+  ],
+};
+
+// Create and start the server
+const server = new A2AServer(coderAgent, {
+  card: coderAgentCard,
+});
+
+// Start the server on the configured port
+server.start(config.server.port);
+
+console.log(`[CoderAgent] Server started on http://${config.server.host}:${config.server.port}`);
+console.log("[CoderAgent] Press Ctrl+C to stop the server");

@@ -19,7 +19,9 @@ import {
 // Import Solana libraries for signature verification
 import { PublicKey } from "@solana/web3.js";
 import nacl from "tweetnacl";
-
+// Import SolanaClient for subscription verification
+import { SolanaClient, createSolanaClient } from "./contract/client";
+import { verifySolanaSignature } from "./verify";
 /**
  * Options for configuring the A2AServer.
  */
@@ -34,89 +36,16 @@ export interface A2AServerOptions {
   card?: schema.AgentCard;
   /** Whether to enable Solana signature verification. Defaults to false. */
   enableSignatureVerification?: boolean;
+  /** Agent NFT mint address for subscription verification */
+  agentNftMint?: string;
+  /** Custom Solana RPC URL. Defaults to Devnet */
+  solanaRpcUrl?: string;
+  /** Solana wallet private key for signing transactions (optional) */
+  solanaWalletPrivateKey?: string;
 }
 
 // Define new TaskContext without the store, based on the original from handler.ts
 export interface TaskContext extends Omit<OldTaskContext, "taskStore"> {}
-
-/**
- * Middleware for verifying Solana wallet signatures.
- * Checks three headers for signature verification data and validates the signature.
- * 
- * @param req Express request object
- * @param res Express response object
- * @param next Express next function
- */
-function verifySolanaSignature(req: Request, res: Response, next: NextFunction) {
-  // Extract verification headers
-  const signature = req.header("X-A2A-Verify-Signature");
-  const message = req.header("X-A2A-Verify-Message");
-  const publicKeyStr = req.header("X-A2A-Verify-PublicKey");
-
-  // Check if all required headers are present
-  if (!signature || !message || !publicKeyStr) {
-    res.status(403).json({
-      jsonrpc: "2.0",
-      id: null,
-      error: {
-        code: -32099,
-        message: "Missing signature verification headers",
-        data: {
-          details: "All X-A2A-Verify-* headers are required for authentication"
-        }
-      }
-    });
-    return;
-  }
-
-  try {
-    // Convert the public key string to a Solana PublicKey object
-    const publicKey = new PublicKey(publicKeyStr);
-
-    // Convert signature and message to Uint8Array for verification
-    const signatureBytes = Buffer.from(signature, 'base64');
-    const messageBytes = Buffer.from(message);
-
-    // Verify the signature using TweetNaCl
-    const isValid = nacl.sign.detached.verify(
-      messageBytes,
-      signatureBytes,
-      publicKey.toBytes()
-    );
-
-    if (!isValid) {
-      res.status(403).json({
-        jsonrpc: "2.0",
-        id: null,
-        error: {
-          code: -32099,
-          message: "Invalid signature",
-          data: {
-            details: "The provided signature could not be verified"
-          }
-        }
-      });
-      return;
-    }
-
-    // Signature is valid, proceed to next middleware
-    next();
-  } catch (error) {
-    console.error("Signature verification error:", error);
-    res.status(403).json({
-      jsonrpc: "2.0",
-      id: null,
-      error: {
-        code: -32099,
-        message: "Signature verification failed",
-        data: {
-          details: error instanceof Error ? error.message : String(error)
-        }
-      }
-    });
-    return;
-  }
-}
 
 /**
  * Implements an A2A specification compliant server using Express.
@@ -132,7 +61,9 @@ export class A2AServer {
   private activeCancellations: Set<string> = new Set();
   card?: schema.AgentCard;
   private enableSignatureVerification: boolean;
-
+  private solanaClient?: SolanaClient;
+  private agentNftMint?: string;
+  private programId: string;
   /**
    * Applies task updates (status or artifact) to the task and history objects.
    * Creates a new copy of the task and history with the updates applied.
@@ -228,7 +159,20 @@ export class A2AServer {
     this.corsOptions = options.cors ?? true; // Default to allow all
     this.basePath = options.basePath ?? "/";
     this.enableSignatureVerification = options.enableSignatureVerification ?? false;
+    this.agentNftMint = process.env.AGENT_NFT_ADDRESS || '';
+    this.programId = process.env.AGENT_MARKET_ADDRESS || '';
     if (options.card) this.card = options.card;
+    
+    // Initialize SolanaClient if needed
+    if (this.enableSignatureVerification && this.agentNftMint) {
+      this.solanaClient = createSolanaClient(
+        this.programId,
+        options.solanaRpcUrl, 
+        options.solanaWalletPrivateKey
+      );
+      console.log("SolanaClient initialized for subscription verification");
+    }
+    
     // Ensure base path starts and ends with a slash if it's not just "/"
     if (this.basePath !== "/") {
       this.basePath = `/${this.basePath.replace(/^\/|\/$/g, "")}/`;
@@ -263,9 +207,14 @@ export class A2AServer {
       res.json(this.card);
     });
 
+    // Create bound middleware for verifySolanaSignature with the SolanaClient
+    const verifySignatureMiddleware = (req: Request, res: Response, next: NextFunction) => {
+      verifySolanaSignature(req, res, next, this.solanaClient, this.agentNftMint);
+    };
+
     // Mount the endpoint handler with signature verification if enabled
     if (this.enableSignatureVerification) {
-      app.post(this.basePath, verifySolanaSignature, this.endpoint());
+      app.post(this.basePath, verifySignatureMiddleware, this.endpoint());
     } else {
       app.post(this.basePath, this.endpoint());
     }
@@ -280,6 +229,9 @@ export class A2AServer {
       );
       if (this.enableSignatureVerification) {
         console.log("Solana signature verification is ENABLED");
+        if (this.solanaClient && this.agentNftMint) {
+          console.log(`Subscription verification is ENABLED for agent NFT: ${this.agentNftMint}`);
+        }
       }
     });
 

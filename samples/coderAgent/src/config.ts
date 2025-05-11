@@ -1,27 +1,40 @@
-import { config } from 'dotenv';
-import { z } from 'zod';
+/**
+ * Configuration module for Coder Agent
+ * Loads environment variables from .env file and provides centralized access
+ */
+import { config } from "dotenv";
 
 // Load environment variables from .env file
 config();
 
-// Define schema for environment variables
-const envSchema = z.object({
-  OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY is required'),
-  PORT: z.string().default('41241').transform(Number),
-  MODEL_NAME: z.string().default('gpt-4o'),
-});
+// Required environment variables
+const requiredEnvVars = ['OPENAI_API_KEY'];
 
-// Parse and validate environment variables
-export const env = envSchema.parse({
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  PORT: process.env.PORT,
-  MODEL_NAME: process.env.MODEL_NAME,
-});
+// Check for required environment variables
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`Error: Required environment variable ${envVar} is not set.`);
+    process.exit(1);
+  }
+}
 
-// Configuration constants
-export const CONFIG = {
-  baseTemperature: 0,
-  maxTokens: 4000,
-  port: env.PORT,
-  modelName: env.MODEL_NAME,
-}; 
+export default {
+  // OpenAI Configuration
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY!,
+    model: process.env.OPENAI_MODEL || "gpt-4o",
+    apiBase: process.env.OPENAI_API_BASE,
+    temperature: parseFloat(process.env.OPENAI_TEMPERATURE || "0.2"),
+  },
+
+  // Server Configuration
+  server: {
+    port: parseInt(process.env.PORT || "41241"),
+    host: process.env.HOST || "localhost",
+  },
+
+  // Other Configuration
+  logging: {
+    level: process.env.LOG_LEVEL || "info",
+  },
+};
