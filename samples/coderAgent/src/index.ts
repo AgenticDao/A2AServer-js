@@ -5,8 +5,8 @@ import {
   TaskContext,
   A2AServer,
   TaskYieldUpdate,
-} from "../../../src/index";
-import * as schema from "../../../src/schema";
+  schema
+} from "@agenticdao/a2a-server";
 import { generateCode } from "./generator";
 import { CodeMessageData } from "./code-format";
 import config from "./config";
