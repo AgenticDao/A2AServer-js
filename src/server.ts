@@ -16,9 +16,6 @@ import {
   isTaskStatusUpdate,
   isArtifactUpdate,
 } from "./utils";
-// Import Solana libraries for signature verification
-import { PublicKey } from "@solana/web3.js";
-import nacl from "tweetnacl";
 // Import SolanaClient for subscription verification
 import { SolanaClient, createSolanaClient } from "./contract/client";
 import { verifySolanaSignature } from "./verify";
@@ -35,13 +32,7 @@ export interface A2AServerOptions {
   /** Agent Card for the agent being served. */
   card?: schema.AgentCard;
   /** Whether to enable Solana signature verification. Defaults to false. */
-  enableSignatureVerification?: boolean;
-  /** Agent NFT mint address for subscription verification */
-  agentNftMint?: string;
-  /** Custom Solana RPC URL. Defaults to Devnet */
-  solanaRpcUrl?: string;
-  /** Solana wallet private key for signing transactions (optional) */
-  solanaWalletPrivateKey?: string;
+  enableVerification?: boolean;
 }
 
 // Define new TaskContext without the store, based on the original from handler.ts
@@ -60,7 +51,7 @@ export class A2AServer {
   // Track active cancellations
   private activeCancellations: Set<string> = new Set();
   card?: schema.AgentCard;
-  private enableSignatureVerification: boolean;
+  private enableVerification: boolean;
   private solanaClient?: SolanaClient;
   private agentNftMint?: string;
   private programId: string;
@@ -158,17 +149,19 @@ export class A2AServer {
     this.taskStore = options.taskStore ?? new InMemoryTaskStore();
     this.corsOptions = options.cors ?? true; // Default to allow all
     this.basePath = options.basePath ?? "/";
-    this.enableSignatureVerification = options.enableSignatureVerification ?? false;
+    this.enableVerification = options.enableVerification ?? false;
     this.agentNftMint = process.env.AGENT_NFT_ADDRESS || '';
     this.programId = process.env.AGENT_MARKET_ADDRESS || '';
+    const walletPrivateKey = process.env.WALLET_PRIVATE_KEY || '';
+    const solanaRpcUrl = process.env.SOLANA_RPC_URL || '';
     if (options.card) this.card = options.card;
     
     // Initialize SolanaClient if needed
-    if (this.enableSignatureVerification && this.agentNftMint) {
+    if (this.enableVerification && this.agentNftMint) {
       this.solanaClient = createSolanaClient(
         this.programId,
-        options.solanaRpcUrl, 
-        options.solanaWalletPrivateKey
+        solanaRpcUrl, 
+        walletPrivateKey
       );
       console.log("SolanaClient initialized for subscription verification");
     }
@@ -213,7 +206,7 @@ export class A2AServer {
     };
 
     // Mount the endpoint handler with signature verification if enabled
-    if (this.enableSignatureVerification) {
+    if (this.enableVerification) {
       app.post(this.basePath, verifySignatureMiddleware, this.endpoint());
     } else {
       app.post(this.basePath, this.endpoint());
@@ -227,7 +220,7 @@ export class A2AServer {
       console.log(
         `A2A Server listening on port ${port} at path ${this.basePath}`
       );
-      if (this.enableSignatureVerification) {
+      if (this.enableVerification) {
         console.log("Solana signature verification is ENABLED");
         if (this.solanaClient && this.agentNftMint) {
           console.log(`Subscription verification is ENABLED for agent NFT: ${this.agentNftMint}`);
@@ -848,6 +841,7 @@ export class A2AServer {
       jsonrpc: "2.0",
       id: this.safeReqId(id), // Can be null if request ID was invalid/missing
       error: error,
+      result: null,
     };
   }
 

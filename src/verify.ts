@@ -27,12 +27,12 @@ export function verifySolanaSignature(
     agentNftMint?: string
 ) {
     // Extract verification headers
-    const signature = req.header("X-A2A-Verify-Signature");
-    const message = req.header("X-A2A-Verify-Message");
-    const publicKeyStr = req.header("X-A2A-Verify-PublicKey");
+    const signature = req.header("X-Solana-Signature");
+    const nonce = req.header("X-Solana-Nonce");
+    const publicKeyStr = req.header("X-Solana-PublicKey");
 
     // Check if all required headers are present
-    if (!signature || !message || !publicKeyStr) {
+    if (!signature || !nonce || !publicKeyStr) {
         res.status(403).json({
             jsonrpc: "2.0",
             id: null,
@@ -40,7 +40,7 @@ export function verifySolanaSignature(
                 code: -32099,
                 message: "Missing signature verification headers",
                 data: {
-                    details: "All X-A2A-Verify-* headers are required for authentication"
+                    details: "All X-Solana-* headers are required for authentication"
                 }
             }
         });
@@ -53,11 +53,11 @@ export function verifySolanaSignature(
 
         // Convert signature and message to Uint8Array for verification
         const signatureBytes = Buffer.from(signature, 'base64');
-        const messageBytes = Buffer.from(message);
+        const nonceBytes = Buffer.from(nonce);
 
         // Verify the signature using TweetNaCl
         const isValid = nacl.sign.detached.verify(
-            messageBytes,
+            nonceBytes,
             signatureBytes,
             publicKey.toBytes()
         );

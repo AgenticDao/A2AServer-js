@@ -1,0 +1,35 @@
+# Source files (only dist is published)
+src
+tsconfig.json
+.eslintrc.js
+.prettierrc
+.editorconfig
+
+# Development files
+samples
+examples
+test
+tests
+jest.config.js
+.travis.yml
+.github
+.gitlab-ci.yml
+.circleci
+.vscode
+.idea
+
+# Misc
+.DS_Store
+*.log
+logs
+*.tmp
+tmp
+coverage
+.nyc_output
+.env*
+docs
+doc
+.a2a-tasks
+
+# Build artifacts
+node_modules 

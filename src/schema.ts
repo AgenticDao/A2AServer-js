@@ -73,7 +73,7 @@ export interface JSONRPCResponse<R = unknown | null, E = unknown | null>
    * Should be null or omitted if an error occurred.
    * @default null
    */
-  result?: R;
+  result: R;
 
   /**
    * An error object if an error occurred during the request. Required on failure.

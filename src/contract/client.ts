@@ -12,6 +12,8 @@ import {
   AnchorError,
   Idl
 } from '@coral-xyz/anchor';
+// @ts-ignore
+import bs58 from 'bs58';
 import 'dotenv/config';
 
 // Import IDL
@@ -52,6 +54,7 @@ export class SolanaClient {
   private program: Program;
   private wallet?: Wallet;
   private walletPublicKey?: PublicKey;
+  private readOnly: boolean = false;
 
   /**
    * Creates a new SolanaClient instance
@@ -69,23 +72,18 @@ export class SolanaClient {
     let wallet: Wallet;
     
     if (walletPrivateKey) {
-      try {
-        const walletKeypair = Keypair.fromSecretKey(
-          Buffer.from(JSON.parse(walletPrivateKey))
-        );
-        wallet = new Wallet(walletKeypair);
-        this.walletPublicKey = walletKeypair.publicKey;
-        this.wallet = wallet;
-      } catch (error) {
-        console.error("Error initializing wallet:", error);
-        // Fall back to read-only mode with dummy wallet
-        const dummyKeypair = Keypair.generate();
-        wallet = new Wallet(dummyKeypair);
-      }
+      const secretKey = bs58.decode(walletPrivateKey);
+      const walletKeypair = Keypair.fromSecretKey(secretKey);
+      wallet = new Wallet(walletKeypair);
+      this.walletPublicKey = walletKeypair.publicKey;
+      this.wallet = wallet;
+      this.readOnly = false;
     } else {
       // Read-only mode with dummy wallet
+      console.log("Initializing in read-only mode. Wallet operations will not be available.");
       const dummyKeypair = Keypair.generate();
       wallet = new Wallet(dummyKeypair);
+      this.readOnly = true;
     }
     
     // Create provider for interacting with the Solana network
@@ -94,7 +92,7 @@ export class SolanaClient {
       wallet,
       { 
         commitment: 'confirmed',
-        skipPreflight: !walletPrivateKey // Skip verification for read-only operations
+        skipPreflight: this.readOnly // Skip verification for read-only operations
       }
     );
     
@@ -142,8 +140,54 @@ export class SolanaClient {
    * @returns True if client has a valid wallet for signing
    */
   hasWallet(): boolean {
-    return !!this.wallet;
+    return !!this.wallet && !this.readOnly;
   }
+
+  /**
+   * Check if client is in read-only mode
+   * @returns True if client is in read-only mode
+   */
+  isReadOnly(): boolean {
+    return this.readOnly;
+  }
+
+  /**
+   * Find AgentNft PDA
+   * @param programId Program ID
+   * @param agentNftMint Agent NFT mint address
+   * @returns PDA public key
+   */
+  private findAgentNftPDA(programId: PublicKey, agentNftMint: PublicKey): PublicKey {
+    const [pda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("agent-nft"), agentNftMint.toBuffer()],
+      programId
+    );
+    return pda;
+  };
+
+
+  /**
+   * Find Subscription PDA
+   * @param programId Program ID
+   * @param userPublicKey User's public key
+   * @param agentNftMint Agent NFT mint address
+   * @returns PDA public key
+   */
+  private findSubscriptionPDA(
+    programId: PublicKey, 
+    userPublicKey: PublicKey, 
+    agentNftMint: PublicKey
+  ): PublicKey {
+    const [pda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("subscription"),
+        userPublicKey.toBuffer(),
+        agentNftMint.toBuffer(),
+      ],
+      programId
+    );
+    return pda;
+  };
 
   /**
    * Get subscription information for a specific user and agent NFT
@@ -151,49 +195,67 @@ export class SolanaClient {
    * @param agentNftMint The public key of the agent NFT mint
    * @returns Subscription information or null if no subscription found
    */
-  async getUserAgentSubscription(
+  async getUserAgentSubscription (
     userPublicKey: PublicKey, 
     agentNftMint: PublicKey
   ): Promise<SubscriptionInfo | null> {
-    console.log(`Fetching subscription for user: ${userPublicKey.toBase58()} and Agent NFT: ${agentNftMint.toBase58()}`);
-    
     try {
       // Find the AgentNft PDA
-      const [agentNftPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("agent-nft"), agentNftMint.toBuffer()],
-        this.program.programId
-      );
+      const agentNftPDA = this.findAgentNftPDA(this.program.programId, agentNftMint);
       
       // Find the Subscription PDA
-      const [subscriptionPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("subscription"),
-          userPublicKey.toBuffer(),
-          agentNftMint.toBuffer(),
-        ],
-        this.program.programId
+      const subscriptionPDA = this.findSubscriptionPDA(
+        this.program.programId, 
+        userPublicKey, 
+        agentNftMint
       );
       
-      // Get the user's subscription for the specific Agent NFT
-      const subscriptionInfo = await this.program.methods
-        .getUserAgentSubscription()
-        .accounts({
-          user: userPublicKey,
-          agentNftMint: agentNftMint,
-          agentNft: agentNftPDA,
-          subscription: subscriptionPDA,
-        })
-        .view({ commitment: 'confirmed' });
+      // First check if the accounts exist before calling the view method
+      const agentNftAccount = await this.connection.getAccountInfo(agentNftPDA);
+      const subscriptionAccount = await this.connection.getAccountInfo(subscriptionPDA);
+      
+      // If either account doesn't exist, return null
+      if (!agentNftAccount || !subscriptionAccount) {
+        return null;
+      }
+
+      let subscriptionInfo;
+      
+      if (!this.readOnly) {
+        // For wallet mode, use the view method
+        subscriptionInfo = await this.program.methods
+          .getUserAgentSubscription()
+          .accounts({
+            user: userPublicKey,
+            agentNftMint: agentNftMint,
+            agentNft: agentNftPDA,
+            subscription: subscriptionPDA,
+          })
+          .view();
+      } else {
+        // For read-only mode, decode the account directly
+        try {
+          const decodedAccount = this.program.coder.accounts.decode(
+            'SubscriptionInfo', // Account name from IDL
+            subscriptionAccount.data
+          );
+
+          console.log("decodedAccount", decodedAccount);
+          
+          subscriptionInfo = {
+            user: decodedAccount.user,
+            agentNftMint: decodedAccount.agentNftMint,
+            metadataUrl: decodedAccount.metadataUrl,
+            expiresAt: decodedAccount.expiresAt
+          };
+        } catch (decodeError) {
+          console.error("Error decoding subscription account:", decodeError);
+          return null;
+        }
+      }
       
       // Check if subscription is active
       const isActive = subscriptionInfo.expiresAt.toNumber() > (Date.now() / 1000);
-      
-      console.log(`Subscription Details: ${subscriptionInfo}`);
-      console.log(`  - User: ${userPublicKey.toBase58()}`);
-      console.log(`  - Agent NFT Mint: ${subscriptionInfo.agentNftMint.toBase58()}`);
-      console.log(`  - Agent NFT Metadata URL: ${subscriptionInfo.metadataUrl}`);
-      console.log(`  - Expires At: ${new Date(subscriptionInfo.expiresAt.toNumber() * 1000).toLocaleString()}`);
-      console.log(`  - Status: ${isActive ? 'Active' : 'Expired'}`);
       
       return {
         ...subscriptionInfo,
@@ -202,12 +264,23 @@ export class SolanaClient {
     } catch (error: unknown) {
       if (
         error instanceof AnchorError && 
-        (error as AnchorErrorWithSimulation).simulationResponse != null && 
-        (error as AnchorErrorWithSimulation).simulationResponse?.logs.join(",").includes("AccountNotInitialized")
+        ((error as AnchorErrorWithSimulation).simulationResponse?.logs || [])
+          .join(",")
+          .includes("AccountNotInitialized")
       ) {
-        console.log("No subscription found for this agent");
+        // Account not initialized, return null
         return null;
       }
+      
+      // Otherwise, check if it's any other account-related error
+      if (
+        error instanceof Error && 
+        (error.message.includes("AccountNotFound") || 
+         error.message.includes("account not found"))
+      ) {
+        return null;
+      }
+      
       console.error("Error getting user agent subscription:", error);
       throw error;
     }

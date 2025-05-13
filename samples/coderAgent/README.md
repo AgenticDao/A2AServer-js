@@ -12,7 +12,7 @@ A code generation agent that leverages OpenAI models through LangChain to create
 
 ## Prerequisites
 
-- Node.js v22 or later
+- Node.js v22.0+ or higher
 - OpenAI API key
 
 ## Setup
@@ -79,6 +79,15 @@ The coder agent follows a straightforward architecture:
 3. **Code Generation**: Uses OpenAI to generate code based on prompts
 4. **Code Extraction**: Parses markdown code blocks into separate files
 5. **Response Streaming**: Delivers files back to the client progressively
+
+## How It Works
+
+1. The agent receives a natural language request through the A2A protocol
+2. It converts the request into a format suitable for OpenAI models
+3. The LangChain integration sends the request to the OpenAI API
+4. The response is processed to extract code blocks and file information
+5. Each generated file is streamed back as an artifact to the client
+6. Finally, a summary of the generated files is sent as a completion message
 
 ## Customization
 

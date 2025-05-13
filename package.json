@@ -1,10 +1,18 @@
 {
   "name": "a2a-server-js",
   "version": "0.1.0",
+  "description": "TypeScript server implementation for the Agent-to-Agent (A2A) communication protocol",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "devDependencies": {
     "@types/node": "^22.13.14",
+    "@types/bs58": "^4.0.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
@@ -12,6 +20,7 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -21,12 +30,34 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "body-parser": "^2.2.0",
+    "bs58": "^5.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "tweetnacl": "^1.0.3"
   },
   "engines": {
-    "node": ">22.0.0"
-  }
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "agent",
+    "a2a",
+    "agent-to-agent",
+    "json-rpc",
+    "express",
+    "typescript",
+    "server",
+    "api",
+    "solana"
+  ],
+  "author": "AgenticDao",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgenticDao/A2AServer-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AgenticDao/A2AServer-js/issues"
+  },
+  "homepage": "https://github.com/AgenticDao/A2AServer-js#readme"
 }

@@ -159,6 +159,7 @@ const coderAgentCard: schema.AgentCard = {
 // Create and start the server
 const server = new A2AServer(coderAgent, {
   card: coderAgentCard,
+  enableVerification: true,
 });
 
 // Start the server on the configured port
