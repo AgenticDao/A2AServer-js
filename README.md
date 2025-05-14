@@ -20,6 +20,7 @@ For detailed documentation including API reference, examples, and usage guides, 
 ## Examples
 
 - [Coder Agent Example](samples/coderAgent) - A sample implementation of a code-generating agent
+- [Currency Agent Example](samples/currencyAgent) - A currency exchange rate agent using LangGraph
 - [Client Example](samples/client) - Example code for client applications to interact with A2A servers
 
 ## Requirements
