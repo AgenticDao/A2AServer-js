@@ -21,3 +21,6 @@ export { A2AError } from "./error";
 
 // Re-export all schema types for convenience
 export * as schema from "./schema";
+
+// Re-export all utils for convenience
+export * as utils from "./utils";

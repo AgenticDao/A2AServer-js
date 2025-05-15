@@ -6,7 +6,7 @@ import {
   A2AServer,
   TaskYieldUpdate,
   schema
-} from "@agenticdao/a2a-server";
+} from "@agenticdao/crypto-a2a-server";
 import config from "./config";
 import { currencyAgent } from "./agent";
 import { AIMessage, BaseMessage, isAIMessage } from "@langchain/core/messages";

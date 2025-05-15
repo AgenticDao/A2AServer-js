@@ -19,7 +19,7 @@ Signature verification ensures that only authorized clients can interact with yo
 To enable signature verification, set the `enableVerification` option when creating your A2A Server:
 
 ```typescript
-import { A2AServer } from "a2a-server";
+import { A2AServer } from "@agenticdao/crypto-a2a-server";
 
 const server = new A2AServer(myHandler, { 
   enableVerification: true 

@@ -1,11 +1,11 @@
 # A2AServer Class
 
-The `A2AServer` class is the core component of the A2A Server library. It provides an Express-based server that implements the A2A protocol, handling incoming JSON-RPC requests, managing tasks, and communicating with the task handler.
+The `A2AServer` class is the core component of the @agenticdao/crypto-a2a-server library. It provides an Express-based server that implements the A2A protocol, handling incoming JSON-RPC requests, managing tasks, and communicating with the task handler.
 
 ## Import
 
 ```typescript
-import { A2AServer } from "a2a-server";
+import { A2AServer } from "@agenticdao/crypto-a2a-server";
 ```
 
 ## Constructor
@@ -112,7 +112,7 @@ The A2AServer maintains the following key components:
 ## Example Usage
 
 ```typescript
-import { A2AServer, TaskContext, TaskYieldUpdate, schema } from "a2a-server";
+import { A2AServer, TaskContext, TaskYieldUpdate, schema } from "@agenticdao/crypto-a2a-server";
 
 // Define your agent's logic
 async function* myHandler(context: TaskContext): AsyncGenerator<TaskYieldUpdate, schema.Task | void, unknown> {
@@ -155,7 +155,7 @@ console.log("A2A Server started on port 41241");
 ### Custom Task Store
 
 ```typescript
-import { A2AServer, FileStore } from "a2a-server";
+import { A2AServer, FileStore } from "@agenticdao/crypto-a2a-server";
 
 // Use file-based storage
 const store = new FileStore({ dir: "my-tasks" });
@@ -165,7 +165,7 @@ const server = new A2AServer(myHandler, { taskStore: store });
 ### With Solana Verification
 
 ```typescript
-import { A2AServer } from "a2a-server";
+import { A2AServer } from "@agenticdao/crypto-a2a-server";
 
 // Enable Solana signature verification
 const server = new A2AServer(myHandler, { 
@@ -182,7 +182,7 @@ const server = new A2AServer(myHandler, {
 ### Custom Agent Card
 
 ```typescript
-import { A2AServer, schema } from "a2a-server";
+import { A2AServer, schema } from "@agenticdao/crypto-a2a-server";
 
 const agentCard: schema.AgentCard = {
   name: "My AI Agent",

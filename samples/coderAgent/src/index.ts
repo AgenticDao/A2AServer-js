@@ -6,7 +6,7 @@ import {
   A2AServer,
   TaskYieldUpdate,
   schema
-} from "@agenticdao/a2a-server";
+} from "@agenticdao/crypto-a2a-server";
 import { generateCode } from "./generator";
 import { CodeMessageData } from "./code-format";
 import config from "./config";
@@ -159,7 +159,7 @@ const coderAgentCard: schema.AgentCard = {
 // Create and start the server
 const server = new A2AServer(coderAgent, {
   card: coderAgentCard,
-  // enableVerification: true,
+  enableVerification: true,
 });
 
 // Start the server on the configured port

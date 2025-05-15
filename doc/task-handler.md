@@ -109,7 +109,7 @@ yield {
 ## Simple Task Handler Example
 
 ```typescript
-import { TaskContext, TaskYieldUpdate, schema } from "a2a-server";
+import { TaskContext, TaskYieldUpdate, schema } from "@agenticdao/crypto-a2a-server";
 
 async function* simpleTaskHandler(
   context: TaskContext

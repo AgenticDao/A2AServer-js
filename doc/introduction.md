@@ -1,8 +1,8 @@
-# Introduction to A2A Server
+# Introduction to Crypto A2A Server
 
-## What is A2A Server?
+## What is Crypto A2A Server?
 
-A2A Server is a TypeScript/JavaScript implementation of the Agent-to-Agent (A2A) communication protocol. This library enables developers to create agent services that can receive tasks from applications, process them asynchronously, and return results. The server handles all the necessary communication protocol details, allowing developers to focus on building the agent's core logic.
+@agenticdao/crypto-a2a-server is a TypeScript/JavaScript implementation of the Agent-to-Agent (A2A) communication protocol. This library enables developers to create agent services that can receive tasks from applications, process them asynchronously, and return results. The server handles all the necessary communication protocol details, allowing developers to focus on building the agent's core logic.
 
 ## Key Features
 
@@ -15,12 +15,12 @@ A2A Server is a TypeScript/JavaScript implementation of the Agent-to-Agent (A2A)
 
 ## Architecture Overview
 
-The A2A Server architecture follows a clean, modular design:
+The Crypto A2A Server architecture follows a clean, modular design:
 
 ```
 ┌─────────────────┐     ┌─────────────────────┐
 │                 │     │                     │
-│  Client App     │◄────►  A2A Server         │
+│  Client App     │◄────►  Crypto A2A Server  │
 │  (JSON-RPC)     │     │  (Express.js)       │
 │                 │     │                     │
 └─────────────────┘     └──────────┬──────────┘
@@ -70,4 +70,4 @@ The server exposes several JSON-RPC methods:
 
 ## Getting Started
 
-To quickly get started with the A2A Server, see the [Getting Started](./getting-started.md) guide, which provides a step-by-step walkthrough of setting up your first agent using this library. 
+To quickly get started with the Crypto A2A Server, see the [Getting Started](./getting-started.md) guide, which provides a step-by-step walkthrough of setting up your first agent using this library. 

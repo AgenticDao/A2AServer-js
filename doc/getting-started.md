@@ -1,6 +1,6 @@
-# Getting Started with A2A Server
+# Getting Started with Crypto A2A Server
 
-This guide will walk you through the process of setting up and running a basic A2A Server agent. You'll learn how to install the library, create a simple task handler, and test your agent.
+This guide will walk you through the process of setting up and running a basic Crypto A2A Server agent. You'll learn how to install the library, create a simple task handler, and test your agent.
 
 ## Prerequisites
 
@@ -26,7 +26,7 @@ npm init -y
 Install the required dependencies:
 
 ```bash
-npm install a2a-server express typescript ts-node @types/node @types/express
+npm install @agenticdao/crypto-a2a-server express typescript ts-node @types/node @types/express
 ```
 
 Create a TypeScript configuration file (`tsconfig.json`):
@@ -57,12 +57,26 @@ my-a2a-agent/
 └── tsconfig.json
 ```
 
+## Environment Variables
+
+Create a `.env` file in your project root to configure your agent. Below are the important environment variables:
+
+```
+# Required only if signature verification is enabled
+AGENT_NFT_ADDRESS=                      # NFT mint address representing this agent
+AGENT_MARKET_ADDRESS=                   # Solana program address for the agent market
+WALLET_PRIVATE_KEY=                     # Private key for the agent's wallet
+SOLANA_RPC_URL=                         # URL for the Solana RPC node
+```
+
+For security reasons, never commit your `.env` file to version control. Consider creating a `.env.example` file with dummy values as a template.
+
 ## Creating a Simple Agent
 
 Now, let's create a simple echo agent that responds to user messages. Open `src/index.ts` and add the following code:
 
 ```typescript
-import { A2AServer, TaskContext, TaskYieldUpdate, schema } from 'a2a-server';
+import { A2AServer, TaskContext, TaskYieldUpdate, schema } from '@agenticdao/crypto-a2a-server';
 
 // Define the agent's task handler
 async function* echoHandler(
@@ -228,7 +242,7 @@ async function* echoHandler(
 By default, the A2A Server uses in-memory storage, which means task data is lost when the server restarts. To persist tasks to disk, use the `FileStore`:
 
 ```typescript
-import { A2AServer, FileStore, TaskContext, TaskYieldUpdate, schema } from 'a2a-server';
+import { A2AServer, FileStore, TaskContext, TaskYieldUpdate, schema } from '@agenticdao/crypto-a2a-server';
 
 // Create a file store
 const store = new FileStore({ dir: '.my-agent-tasks' });
@@ -251,7 +265,7 @@ Now that you have a basic agent running, you can:
 Here's a more complete example that includes an agent card and error handling:
 
 ```typescript
-import { A2AServer, FileStore, TaskContext, TaskYieldUpdate, schema } from 'a2a-server';
+import { A2AServer, FileStore, TaskContext, TaskYieldUpdate, schema } from '@agenticdao/crypto-a2a-server';
 
 async function* enhancedHandler(
   context: TaskContext

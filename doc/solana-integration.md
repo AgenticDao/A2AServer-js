@@ -42,7 +42,7 @@ export class SolanaClient {
 You can create a Solana client using the `createSolanaClient` helper function:
 
 ```typescript
-import { createSolanaClient } from "a2a-server";
+import { createSolanaClient } from "@agenticdao/crypto-a2a-server";
 
 // Create a client with default RPC (devnet)
 const client = createSolanaClient("AgenT1ne2qArKJyP8zcFJhbsvZ4eZ1iSemvJfvCVNsH");
@@ -69,7 +69,7 @@ To check if a user has an active subscription:
 
 ```typescript
 import { PublicKey } from "@solana/web3.js";
-import { createSolanaClient } from "a2a-server";
+import { createSolanaClient } from "@agenticdao/crypto-a2a-server";
 
 async function checkSubscription(userWallet: string, agentNft: string) {
   const client = createSolanaClient(
@@ -124,7 +124,7 @@ interface SubscriptionInfo {
 The Solana client is automatically used by the A2A Server when signature verification is enabled and `AGENT_NFT_ADDRESS` is set:
 
 ```typescript
-import { A2AServer } from "a2a-server";
+import { A2AServer } from "@agenticdao/crypto-a2a-server";
 
 // With signature verification and subscription checks
 const server = new A2AServer(myHandler, { 
@@ -188,7 +188,7 @@ You can manually use the verification middleware in custom Express applications:
 
 ```typescript
 import express from "express";
-import { verifySolanaSignature, createSolanaClient } from "a2a-server";
+import { verifySolanaSignature, createSolanaClient } from "@agenticdao/crypto-a2a-server";
 import { PublicKey } from "@solana/web3.js";
 
 const app = express();

@@ -1,6 +1,6 @@
 # Advanced Usage
 
-This guide covers advanced usage patterns for the A2A Server, including techniques for building more complex agents, handling long-running tasks, implementing conversational state, and integrating with external services.
+This guide covers advanced usage patterns for the @agenticdao/crypto-a2a-server, including techniques for building more complex agents, handling long-running tasks, implementing conversational state, and integrating with external services.
 
 ## Table of Contents
 
@@ -391,7 +391,7 @@ When deploying your A2A Server to production, consider these best practices:
 Store configuration and sensitive data in environment variables:
 
 ```typescript
-import { A2AServer, FileStore } from 'a2a-server';
+import { A2AServer, FileStore } from '@agenticdao/crypto-a2a-server';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -455,7 +455,7 @@ server {
 Add monitoring to track your agent's performance and errors:
 
 ```typescript
-import { A2AServer } from 'a2a-server';
+import { A2AServer } from '@agenticdao/crypto-a2a-server';
 import * as prometheus from 'prom-client';
 
 // Set up metrics
@@ -514,7 +514,7 @@ server.start();
 Protect your agent from abuse with rate limiting:
 
 ```typescript
-import { A2AServer } from 'a2a-server';
+import { A2AServer } from '@agenticdao/crypto-a2a-server';
 import rateLimit from 'express-rate-limit';
 import express from 'express';
 

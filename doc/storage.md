@@ -56,7 +56,7 @@ The `InMemoryTaskStore` stores tasks and their history in memory. This is the de
 #### Usage
 
 ```typescript
-import { A2AServer, InMemoryTaskStore } from 'a2a-server';
+import { A2AServer, InMemoryTaskStore } from '@agenticdao/crypto-a2a-server';
 
 // Create a new in-memory store
 const store = new InMemoryTaskStore();
@@ -88,7 +88,7 @@ interface FileStoreOptions {
 #### Usage
 
 ```typescript
-import { A2AServer, FileStore } from 'a2a-server';
+import { A2AServer, FileStore } from '@agenticdao/crypto-a2a-server';
 
 // Create a file store with custom directory
 const store = new FileStore({ dir: 'my-task-storage' });
@@ -112,7 +112,7 @@ You can implement custom storage backends by creating a class that implements th
 ### Example: MongoDB Storage
 
 ```typescript
-import { TaskStore, TaskAndHistory } from 'a2a-server';
+import { TaskStore, TaskAndHistory } from '@agenticdao/crypto-a2a-server';
 import { MongoClient, Db } from 'mongodb';
 
 export class MongoTaskStore implements TaskStore {

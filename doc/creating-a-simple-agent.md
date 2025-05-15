@@ -1,6 +1,6 @@
 # Creating a Simple Agent
 
-This guide explains how to create a simple yet functional agent using the A2A Server library. We'll build a weather forecast agent that demonstrates key concepts like handling user inputs, generating artifacts, and managing task state.
+This guide explains how to create a simple yet functional agent using the @agenticdao/crypto-a2a-server library. We'll build a weather forecast agent that demonstrates key concepts like handling user inputs, generating artifacts, and managing task state.
 
 ## Prerequisites
 
@@ -27,7 +27,7 @@ First, create a new project:
 mkdir weather-agent
 cd weather-agent
 npm init -y
-npm install a2a-server typescript ts-node @types/node @types/express
+npm install @agenticdao/crypto-a2a-server typescript ts-node @types/node @types/express
 ```
 
 Create a TypeScript configuration:
@@ -58,7 +58,7 @@ touch src/index.ts
 Open `src/index.ts` and start by importing the required dependencies:
 
 ```typescript
-import { A2AServer, TaskContext, TaskYieldUpdate, schema } from 'a2a-server';
+import { A2AServer, TaskContext, TaskYieldUpdate, schema } from '@agenticdao/crypto-a2a-server';
 ```
 
 Next, let's create a simple mock weather data function:
@@ -318,7 +318,7 @@ if (wantsJson) {
 Here's the complete weather forecast agent implementation:
 
 ```typescript
-import { A2AServer, TaskContext, TaskYieldUpdate, schema } from 'a2a-server';
+import { A2AServer, TaskContext, TaskYieldUpdate, schema } from '@agenticdao/crypto-a2a-server';
 
 // Mock weather data function
 function getWeatherForecast(city: string): { 

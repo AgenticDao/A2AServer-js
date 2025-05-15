@@ -17,7 +17,7 @@ Generates a timestamp in ISO 8601 format, which is used for recording when task 
 
 **Example:**
 ```typescript
-import { getCurrentTimestamp } from "a2a-server/utils";
+import { getCurrentTimestamp } from "@agenticdao/crypto-a2a-server/utils";
 
 // Record when a task status changed
 const statusUpdate = {
@@ -45,7 +45,7 @@ Checks if a value is a plain JavaScript object (not an array or null).
 
 **Example:**
 ```typescript
-import { isObject } from "a2a-server/utils";
+import { isObject } from "@agenticdao/crypto-a2a-server/utils";
 
 const value1 = { name: "test" };
 const value2 = ["test"];
@@ -72,7 +72,7 @@ Type guard to check if an object is a task status update (has 'state' property a
 
 **Example:**
 ```typescript
-import { isTaskStatusUpdate } from "a2a-server/utils";
+import { isTaskStatusUpdate } from "@agenticdao/crypto-a2a-server/utils";
 
 const update1 = { state: "working", message: { /* ... */ } };
 const update2 = { name: "result.txt", parts: [{ /* ... */ }] };
@@ -97,7 +97,7 @@ Type guard to check if an object is an artifact update (has 'parts' property).
 
 **Example:**
 ```typescript
-import { isArtifactUpdate } from "a2a-server/utils";
+import { isArtifactUpdate } from "@agenticdao/crypto-a2a-server/utils";
 
 const update1 = { state: "working", message: { /* ... */ } };
 const update2 = { name: "result.txt", parts: [{ /* ... */ }] };
@@ -111,7 +111,7 @@ isArtifactUpdate(update2); // true
 These utilities are primarily used internally by the A2A Server, but you can also use them in your task handlers if needed:
 
 ```typescript
-import { getCurrentTimestamp, isObject } from "a2a-server/utils";
+import { getCurrentTimestamp, isObject } from "@agenticdao/crypto-a2a-server/utils";
 
 async function* myTaskHandler(context: TaskContext): AsyncGenerator<TaskYieldUpdate, void, unknown> {
   // Get the current timestamp

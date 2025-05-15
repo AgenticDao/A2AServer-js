@@ -35,6 +35,7 @@ The agent can be configured through environment variables in the `.env` file:
 ```
 # Required
 OPENAI_API_KEY=your_api_key_here
+WALLET_PRIVATE_KEY=your_private_key_in_base58
 
 # Optional with defaults
 OPENAI_MODEL=gpt-4o               # Model to use for code generation
