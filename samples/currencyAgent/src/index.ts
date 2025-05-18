@@ -84,12 +84,7 @@ async function* currencyAgentHandler({
     }
     
     // Prepare the message parts
-    const messageParts: schema.Part[] = [
-      {
-        type: "text",
-        text: messageContent,
-      }
-    ];
+    const messageParts: schema.Part[] = [];
     
     // Add exchange data as a data part if available
     if (result.exchange_data) {
@@ -124,6 +119,20 @@ async function* currencyAgentHandler({
           });
         }
       }
+    }
+
+    messageParts.push({
+      type: "text",
+      text: messageContent,
+    });
+
+    for (let i = 0; i < messageParts.length; i++) {
+      yield {
+        index: i,
+        name: `currency agent response ${i}`,
+        parts: [messageParts[i]],
+        lastChunk: i === messageParts.length - 1,
+      };
     }
     
     // Check if the message content indicates more input is needed
