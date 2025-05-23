@@ -31,6 +31,7 @@ export default {
   server: {
     port: parseInt(process.env.PORT || "41241"),
     host: process.env.HOST || "localhost",
+    endpoint: process.env.SERVER_ENDPOINT || `http://${process.env.HOST || "localhost"}:${process.env.PORT || "41241"}`,
   },
 
   // Other Configuration

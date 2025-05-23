@@ -125,7 +125,7 @@ const coderAgentCard: schema.AgentCard = {
   name: "Coder Agent",
   description:
     "An agent that generates code based on natural language instructions and streams file outputs.",
-  url: `http://${config.server.host}:${config.server.port}`,
+  url: config.server.endpoint,
   provider: {
     organization: "A2A Samples",
   },
@@ -165,5 +165,5 @@ const server = new A2AServer(coderAgent, {
 // Start the server on the configured port
 server.start(config.server.port);
 
-console.log(`[CoderAgent] Server started on http://${config.server.host}:${config.server.port}`);
+console.log(`[CoderAgent] Server started on http://${config.server.host}:${config.server.port}, and endpoint is: ${config.server.endpoint}`);
 console.log("[CoderAgent] Press Ctrl+C to stop the server");

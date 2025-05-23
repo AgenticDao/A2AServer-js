@@ -171,7 +171,7 @@ async function* cryptoMarketAgentHandler({
 const cryptoMarketAgentCard: schema.AgentCard = {
   name: "Crypto Market Analysis Agent",
   description: "Provides comprehensive cryptocurrency market analysis",
-  url: `http://${config.server.host}:${config.server.port}`,
+  url: config.server.endpoint,
   provider: {
     organization: "A2A Samples",
   },
@@ -210,5 +210,5 @@ const server = new A2AServer(cryptoMarketAgentHandler, {
 // Start the server on the configured port
 server.start(config.server.port);
 
-console.log(`[Crypto Market Agent] Server started on http://${config.server.host}:${config.server.port}`);
+console.log(`[Crypto Market Agent] Server started on http://${config.server.host}:${config.server.port}, and endpoint is: ${config.server.endpoint}`);
 console.log("[Crypto Market Agent] Press Ctrl+C to stop the server");

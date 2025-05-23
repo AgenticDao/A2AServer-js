@@ -170,7 +170,7 @@ async function* currencyAgentHandler({
 const currencyAgentCard: schema.AgentCard = {
   name: "Currency Agent",
   description: "Helps with exchange rates for currencies",
-  url: `http://${config.server.host}:${config.server.port}`,
+  url: config.server.endpoint,
   provider: {
     organization: "A2A Samples",
   },
@@ -209,5 +209,5 @@ const server = new A2AServer(currencyAgentHandler, {
 // Start the server on the configured port
 server.start(config.server.port);
 
-console.log(`[Currency Agent] Server started on http://${config.server.host}:${config.server.port}`);
+console.log(`[Currency Agent] Server started on http://${config.server.host}:${config.server.port}, and endpoint is: ${config.server.endpoint}`);
 console.log("[Currency Agent] Press Ctrl+C to stop the server");
