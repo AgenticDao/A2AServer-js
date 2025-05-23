@@ -1,5 +1,5 @@
 /**
- * Currency Agent implemented with LangChain and OpenAI
+ * Crypto Market Agent implemented with LangChain and OpenAI
  */
 import {
   TaskContext,
@@ -8,20 +8,20 @@ import {
   schema
 } from "@agenticdao/crypto-a2a-server";
 import config from "./config";
-import { currencyAgent } from "./agent";
+import { cryptoMarketAgent } from "./agent";
 import { AIMessage, BaseMessage, isAIMessage } from "@langchain/core/messages";
 
 /**
- * Currency Agent implementation using LangChain and OpenAI
+ * Crypto Market Agent implementation using LangChain and OpenAI
  */
-async function* currencyAgentHandler({
+async function* cryptoMarketAgentHandler({
   task,
   userMessage,
   history,
 }: TaskContext): AsyncGenerator<TaskYieldUpdate, schema.Task | void, unknown> {
   // Make sure we have a user message
   if (!userMessage || !userMessage.parts.length) {
-    console.warn(`[CurrencyAgent] No user message found for task ${task.id}`);
+    console.warn(`[CryptoMarketAgent] No user message found for task ${task.id}`);
     yield {
       state: "failed",
       message: {
@@ -40,7 +40,7 @@ async function* currencyAgentHandler({
       state: "input-required",
       message: {
         role: "agent",
-        parts: [{ type: "text", text: "Please provide a currency exchange query. For example: 'What is the exchange rate between USD and EUR?'" }],
+        parts: [{ type: "text", text: "Please provide a cryptocurrency to analyze. For example: 'Analyze Bitcoin market trends' or 'What's the current status of Ethereum?'" }],
       },
     };
     return;
@@ -51,13 +51,13 @@ async function* currencyAgentHandler({
     state: "working",
     message: {
       role: "agent",
-      parts: [{ type: "text", text: "Looking up exchange rates..." }],
+      parts: [{ type: "text", text: "Analyzing cryptocurrency market data..." }],
     },
   };
 
   try {
-    // Run the currency agent graph with the user's query
-    const result = await currencyAgent.invoke(userQuery);
+    // Run the crypto market agent graph with the user's query
+    const result = await cryptoMarketAgent.invoke(userQuery);
     
     // Get the last assistant message
     const assistantMessage = result.messages
@@ -86,13 +86,13 @@ async function* currencyAgentHandler({
     // Prepare the message parts
     const messageParts: schema.Part[] = [];
     
-    // Add exchange data as a data part if available
-    if (result.exchange_data) {
-      if (result.exchange_data.error) {
+    // Add crypto data as a data part if available
+    if (result.crypto_data) {
+      if (result.crypto_data.error) {
         // If there's an error, add the error information
         messageParts.push({
           type: "text",
-          text: `\n\nError: ${result.exchange_data.error}\n${result.exchange_data.details || ''}`
+          text: `\n\nError: ${result.crypto_data.error}\n${result.crypto_data.details || ''}`
         });
         
         // Return input-required state
@@ -104,18 +104,18 @@ async function* currencyAgentHandler({
           },
         };
         return;
-      } else if (result.exchange_data.success) {
-        // Add successful exchange rate data
+      } else if (result.crypto_data.success) {
+        // Add successful crypto market data
         messageParts.push({
           type: "data",
-          data: result.exchange_data
+          data: result.crypto_data
         });
         
         // If there's formatted info, add a friendlier display
-        if (result.exchange_data.formatted && result.exchange_data.formatted.message) {
+        if (result.crypto_data.formatted && result.crypto_data.formatted.message) {
           messageParts.push({
             type: "text",
-            text: `\n\n${result.exchange_data.formatted.message}`
+            text: `\n\n${result.crypto_data.formatted.message}`
           });
         }
       }
@@ -129,7 +129,7 @@ async function* currencyAgentHandler({
     for (let i = 0; i < messageParts.length; i++) {
       yield {
         index: i,
-        name: `currency agent response ${i}`,
+        name: `crypto market analysis ${i}`,
         parts: [messageParts[i]],
         lastChunk: i === messageParts.length - 1,
       };
@@ -138,7 +138,8 @@ async function* currencyAgentHandler({
     // Check if the message content indicates more input is needed
     const needsMoreInput = messageContent.includes("need more information") || 
                          messageContent.includes("please provide") || 
-                         messageContent.includes("missing");
+                         messageContent.includes("missing") ||
+                         messageContent.includes("specify");
     
     // Return the final response
     yield {
@@ -150,7 +151,7 @@ async function* currencyAgentHandler({
     };
   } catch (error) {
     // Handle errors
-    console.error("[CurrencyAgent] Error processing request:", error);
+    console.error("[CryptoMarketAgent] Error processing request:", error);
     yield {
       state: "failed",
       message: {
@@ -167,9 +168,9 @@ async function* currencyAgentHandler({
 }
 
 // Agent card definition
-const currencyAgentCard: schema.AgentCard = {
-  name: "Currency Agent",
-  description: "Helps with exchange rates for currencies",
+const cryptoMarketAgentCard: schema.AgentCard = {
+  name: "Crypto Market Analysis Agent",
+  description: "Provides comprehensive cryptocurrency market analysis",
   url: `http://${config.server.host}:${config.server.port}`,
   provider: {
     organization: "A2A Samples",
@@ -185,29 +186,29 @@ const currencyAgentCard: schema.AgentCard = {
   defaultOutputModes: ["text", "text/plain"],
   skills: [
     {
-      id: "convert_currency",
-      name: "Currency Exchange Rates Tool",
+      id: "analyze_crypto_markets",
+      name: "Cryptocurrency Market Analysis Tool",
       description:
-        "Helps with exchange values between various currencies",
-      tags: ["currency conversion", "currency exchange", "forex"],
+        "Provides detailed analysis of cryptocurrency markets including current prices, trends, historical context, and future outlook",
+      tags: ["cryptocurrency", "market analysis", "crypto trading", "bitcoin", "ethereum"],
       examples: [
-        "What is the exchange rate between USD and EUR?", 
-        "How much is 1 Euro in Japanese Yen?",
-        "Check yesterday's GBP to CNY exchange rate",
-        "Convert USD to CNY"
+        "Analyze Bitcoin's current market situation", 
+        "What's the market outlook for Ethereum?",
+        "How is Solana performing in the market?",
+        "Current price and trend analysis for Cardano"
       ],
     },
   ],
 };
 
 // Create and start the server
-const server = new A2AServer(currencyAgentHandler, {
-  card: currencyAgentCard,
+const server = new A2AServer(cryptoMarketAgentHandler, {
+  card: cryptoMarketAgentCard,
   enableVerification: true,
 });
 
 // Start the server on the configured port
 server.start(config.server.port);
 
-console.log(`[Currency Agent] Server started on http://${config.server.host}:${config.server.port}`);
-console.log("[Currency Agent] Press Ctrl+C to stop the server");
+console.log(`[Crypto Market Agent] Server started on http://${config.server.host}:${config.server.port}`);
+console.log("[Crypto Market Agent] Press Ctrl+C to stop the server");

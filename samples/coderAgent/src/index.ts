@@ -136,8 +136,8 @@ const coderAgentCard: schema.AgentCard = {
     stateTransitionHistory: true,
   },
   authentication: null,
-  defaultInputModes: ["text"],
-  defaultOutputModes: ["text", "file"],
+  defaultInputModes: ["text", "text/plain"],
+  defaultOutputModes: ["text", "text/plain", "file"],
   skills: [
     {
       id: "code_generation",
