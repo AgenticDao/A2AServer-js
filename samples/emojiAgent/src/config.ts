@@ -1,5 +1,5 @@
 /**
- * Configuration module for Currency Agent
+ * Configuration module for Emoji Agent
  * Loads environment variables from .env file and provides centralized access
  */
 import { config } from "dotenv";
@@ -8,7 +8,7 @@ import { config } from "dotenv";
 config();
 
 // Required environment variables
-const requiredEnvVars = ['OPENAI_API_KEY'];
+const requiredEnvVars = ['OPENAI_API_KEY', 'IMAGE_SERVICE_API_BASE', 'IMAGE_SERVICE_API_KEY', 'IMAGE_SERVICE_MODEL'];
 
 // Check for required environment variables
 for (const envVar of requiredEnvVars) {
@@ -25,6 +25,13 @@ export default {
     model: process.env.OPENAI_MODEL || "gpt-4o",
     apiBase: process.env.OPENAI_API_BASE,
     temperature: parseFloat(process.env.OPENAI_TEMPERATURE || "0.2"),
+  },
+
+  // Image Generation Service Configuration
+  imageService: {
+    apiBase: process.env.IMAGE_SERVICE_API_BASE!,
+    apiKey: process.env.IMAGE_SERVICE_API_KEY!,
+    model: process.env.IMAGE_SERVICE_MODEL!,
   },
 
   // Server Configuration

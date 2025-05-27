@@ -1,5 +1,5 @@
 /**
- * OpenAI models configuration for the Currency Agent
+ * OpenAI models configuration for the Emoji Agent
  */
 import { ChatOpenAI } from "@langchain/openai";
 import config from "./config";

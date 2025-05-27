@@ -1,5 +1,5 @@
 /**
- * OpenAI models configuration for the Coder Agent
+ * OpenAI models configuration for the Crypto Market Agent
  */
 import { ChatOpenAI } from "@langchain/openai";
 import config from "./config";

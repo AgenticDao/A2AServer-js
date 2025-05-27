@@ -25,6 +25,8 @@ For detailed documentation including API reference, examples, and usage guides, 
 
 - [Coder Agent Example](https://github.com/AgenticDao/A2AServer-js/tree/master/samples/coderAgent) - A sample implementation of a code-generating agent
 - [Currency Agent Example](https://github.com/AgenticDao/A2AServer-js/tree/master/samples/currencyAgent) - A currency exchange rate agent using LangGraph
+- [Crypto Market Agent Example](https://github.com/AgenticDao/A2AServer-js/tree/master/samples/cryptoMarketAgent) - A specialized cryptocurrency market analysis agent built with LangChain and LangGraph
+- [emoji Agent Example](https://github.com/AgenticDao/A2AServer-js/tree/master/samples/emojiAgent) - A specialized emoji generation agent built with LangChain and LangGraph that creates custom emoji images based on user descriptions
 - [Client Example](https://github.com/AgenticDao/A2AServer-js/tree/master/samples/client) - Example code for client applications to interact with A2A servers
 
 ## Requirements

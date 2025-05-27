@@ -1,5 +1,5 @@
 /**
- * Configuration module for Coder Agent
+ * Configuration module for Crypto Market Agent
  * Loads environment variables from .env file and provides centralized access
  */
 import { config } from "dotenv";
