@@ -116,21 +116,8 @@ async function* emojiGenerationAgentHandler({
             }
           });
         }
-        
-        // Add download link if available
-        if (result.emoji_data.downloadUrl) {
-          messageParts.push({
-            type: "text",
-            text: `\n\n🔗 [Download your emoji](${result.emoji_data.downloadUrl})`
-          });
-        }
       }
     }
-
-    messageParts.push({
-      type: "text",
-      text: messageContent,
-    });
 
     for (let i = 0; i < messageParts.length; i++) {
       yield {
@@ -140,6 +127,11 @@ async function* emojiGenerationAgentHandler({
         lastChunk: i === messageParts.length - 1,
       };
     }
+
+    messageParts.push({
+      type: "text",
+      text: messageContent,
+    });
     
     // Check if the message content indicates more input is needed
     const needsMoreInput = messageContent.includes("need more information") || 
@@ -153,7 +145,7 @@ async function* emojiGenerationAgentHandler({
       state: needsMoreInput ? "input-required" : "completed",
       message: {
         role: "agent",
-        parts: messageParts,
+        parts: [messageParts[messageParts.length - 1]],
       },
     };
   } catch (error) {

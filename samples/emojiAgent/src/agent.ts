@@ -98,9 +98,6 @@ const IMAGE_SERVICE_MODEL = config.imageService.model;
 const generateEmojiTool = tool(async (input) => {
   const { prompt } = input;
   console.log(`Generating emoji for prompt: ${prompt}`);
-  console.log(`IMAGE_SERVICE_API_BASE: ${IMAGE_SERVICE_API_BASE}`);
-  console.log(`IMAGE_SERVICE_API_KEY: ${IMAGE_SERVICE_API_KEY}`);
-  console.log(`IMAGE_SERVICE_MODEL: ${IMAGE_SERVICE_MODEL}`);
   
   try {
     const requestBody = {
