@@ -152,8 +152,19 @@ const generateEmojiTool = tool(async (input) => {
       } else {
         console.warn(`No image URL found in response for prompt: ${prompt}`);
         return {
-          error: "No image URL found in response",
-          details: `The image generation service responded but no image URL was found. Response: ${content.substring(0, 200)}...`
+          success: false,
+          id: uuidv4(),
+          prompt: prompt,
+          imageUrl: "",
+          downloadUrl: "",
+          timestamp: new Date().toISOString(),
+          model: IMAGE_SERVICE_MODEL,
+          fullResponse: content,
+          formatted: {
+            prompt: prompt,
+            imageUrl: "",
+            message: `No image URL found in response for prompt: ${prompt}`
+          }
         };
       }
     } else {
@@ -309,17 +320,17 @@ export class EmojiAgent {
         ]
       };
 
-          const response = await axios.post(
-      IMAGE_SERVICE_API_BASE,
-      requestBody,
-      {
-        headers: {
-          'Authorization': IMAGE_SERVICE_API_KEY,
-          'Content-Type': 'application/json'
-        },
-        timeout: 120000 // 2 minutes timeout for image generation
-      }
-    );
+      const response = await axios.post(
+        IMAGE_SERVICE_API_BASE,
+        requestBody,
+        {
+          headers: {
+            'Authorization': IMAGE_SERVICE_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          timeout: 120000 // 2 minutes timeout for image generation
+        }
+      );
       
       if (response.data && response.data.choices && response.data.choices.length > 0) {
         const content = response.data.choices[0].message.content;
